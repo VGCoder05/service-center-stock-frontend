@@ -11,8 +11,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 const schema = yup.object({
   supplierCode: yup
     .string()
-    .max(20, 'Code cannot exceed 20 characters')
-    .required('Supplier code is required'),
+    .max(20, 'Code cannot exceed 20 characters'),
   supplierName: yup
     .string()
     .max(100, 'Name cannot exceed 100 characters')
@@ -297,7 +296,7 @@ const Suppliers = () => {
           <div className="grid grid-cols-2 gap-4">
             {/* Supplier Code */}
             <div>
-              <label className="label">Supplier Code *</label>
+              <label className="label">Supplier Code </label>
               <input
                 type="text"
                 className={errors.supplierCode ? 'input-error' : 'input'}

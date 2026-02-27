@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import customerService from '../../services/customerService';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import showToast from '../../utils/toast';
 
 // Validation schema
 const schema = yup.object({
@@ -14,8 +15,8 @@ const schema = yup.object({
     .string()
     .max(20, 'Code cannot exceed 20 characters'),
   ticketNumber: yup
-  .number()
-  .max(20, 'Ticket number cannot exceed 20 characters'),
+    .number()
+    .max(20, 'Ticket number cannot exceed 20 characters'),
   customerName: yup
     .string()
     .max(150, 'Name cannot exceed 150 characters')
@@ -44,7 +45,7 @@ const schema = yup.object({
 
 const Customers = () => {
   const { isAdmin, isViewer } = useAuth();
-  
+
   // State
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,6 +99,7 @@ const Customers = () => {
       setPagination(response.pagination);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch customers');
+      showToast.error(err.response?.data?.error || 'Failed to fetch customers');
     } finally {
       setLoading(false);
     }
@@ -112,7 +114,7 @@ const Customers = () => {
     setEditingCustomer(null);
     reset({
       customerCode: '',
-      ticketNumber:'',
+      ticketNumber: '',
       customerName: '',
       contactPerson: '',
       phone: '',
@@ -140,11 +142,11 @@ const Customers = () => {
       address: customer.address || '',
       hasAMC: customer.hasAMC || false,
       amcNumber: customer.amcDetails?.amcNumber || '',
-      amcStartDate: customer.amcDetails?.startDate 
-        ? format(new Date(customer.amcDetails.startDate), 'yyyy-MM-dd') 
+      amcStartDate: customer.amcDetails?.startDate
+        ? format(new Date(customer.amcDetails.startDate), 'yyyy-MM-dd')
         : '',
-      amcEndDate: customer.amcDetails?.endDate 
-        ? format(new Date(customer.amcDetails.endDate), 'yyyy-MM-dd') 
+      amcEndDate: customer.amcDetails?.endDate
+        ? format(new Date(customer.amcDetails.endDate), 'yyyy-MM-dd')
         : '',
       equipmentCovered: customer.amcDetails?.equipmentCovered || ''
     });
@@ -183,13 +185,16 @@ const Customers = () => {
 
       if (editingCustomer) {
         await customerService.update(editingCustomer._id, apiData);
+        showToast.success('Customer updated successfully');
       } else {
         await customerService.create(apiData);
+        showToast.success('Customer created successfully');
       }
       setIsModalOpen(false);
       fetchCustomers();
     } catch (err) {
       setError(err.response?.data?.error || 'Operation failed');
+      showToast.error(err.response?.data?.error || 'Operation failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -198,14 +203,16 @@ const Customers = () => {
   // Confirm delete
   const handleDelete = async () => {
     if (!deletingCustomer) return;
-    
+
     setIsSubmitting(true);
     try {
       await customerService.delete(deletingCustomer._id);
+      showToast.success('Customer deleted successfully');
       setIsDeleteDialogOpen(false);
       setDeletingCustomer(null);
       fetchCustomers();
     } catch (err) {
+      showToast.error(err.response?.data?.error || 'Delete failed');
       setError(err.response?.data?.error || 'Delete failed');
     } finally {
       setIsSubmitting(false);
@@ -394,7 +401,7 @@ const Customers = () => {
                 <p className="error-message">{errors.customerCode.message}</p>
               )}
             </div>
-            
+
             {/* Ticket Number */}
             <div>
               <label className="label">Ticket Number</label>

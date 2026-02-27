@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import partsService from '../../services/partsService';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import showToast from '../../utils/toast';
 
 // Unit options
 const UNIT_OPTIONS = ['Pcs', 'Kg', 'Meter', 'Box', 'Set', 'Pair', 'Unit'];
@@ -92,6 +93,7 @@ const Parts = () => {
       setPagination(response.pagination);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch parts');
+      showToast.error(err.response?.data?.error || 'Failed to fetch parts');
     } finally {
       setLoading(false);
     }
@@ -104,6 +106,7 @@ const Parts = () => {
       setCategories(response.data);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
+      showToast.error(err || 'Failed to fetch categories');
     }
   };
 
@@ -159,14 +162,17 @@ const Parts = () => {
     try {
       if (editingPart) {
         await partsService.update(editingPart._id, data);
+      showToast.success('Part updated successfully');
       } else {
         await partsService.create(data);
+        showToast.success('Part created successfully');
       }
       setIsModalOpen(false);
       fetchParts();
       fetchCategories(); // Refresh categories in case new one was added
     } catch (err) {
       setError(err.response?.data?.error || 'Operation failed');
+      showToast.error(err.response?.data?.error || 'Operation failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -179,11 +185,13 @@ const Parts = () => {
     setIsSubmitting(true);
     try {
       await partsService.delete(deletingPart._id);
+      showToast.success('Part deleted successfully');
       setIsDeleteDialogOpen(false);
       setDeletingPart(null);
       fetchParts();
     } catch (err) {
       setError(err.response?.data?.error || 'Delete failed');
+      showToast.error(err.response?.data?.error || 'Delete failed');
     } finally {
       setIsSubmitting(false);
     }

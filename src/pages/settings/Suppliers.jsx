@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import supplierService from '../../services/supplierService';
 import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import showToast from '../../utils/toast';
 
 // Validation schema
 const schema = yup.object({
@@ -20,8 +21,8 @@ const schema = yup.object({
     .string()
     .max(100, 'Contact person cannot exceed 100 characters'),
   phone: yup
-    .string()
-    .max(20, 'Phone cannot exceed 20 characters'),
+    .number()
+    .max(12, 'Phone cannot exceed 10 characters'),
   email: yup
     .string()
     .email('Please enter a valid email'),
@@ -75,6 +76,7 @@ const Suppliers = () => {
       setPagination(response.pagination);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch suppliers');
+      showToast.error(err.response?.data?.error || 'Failed to fetch suppliers');
     } finally {
       setLoading(false);
     }
@@ -126,13 +128,16 @@ const Suppliers = () => {
     try {
       if (editingSupplier) {
         await supplierService.update(editingSupplier._id, data);
+       showToast.success('Supplier updated successfully');
       } else {
         await supplierService.create(data);
+        showToast.success('Supplier created successfully');
       }
       setIsModalOpen(false);
       fetchSuppliers();
     } catch (err) {
       setError(err.response?.data?.error || 'Operation failed');
+       showToast.error(err.response?.data?.error || 'Operation failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -145,11 +150,13 @@ const Suppliers = () => {
     setIsSubmitting(true);
     try {
       await supplierService.delete(deletingSupplier._id);
+      showToast.success('Supplier deleted successfully');
       setIsDeleteDialogOpen(false);
       setDeletingSupplier(null);
       fetchSuppliers();
     } catch (err) {
       setError(err.response?.data?.error || 'Delete failed');
+      showToast.error(err.response?.data?.error || 'Delete failed');
     } finally {
       setIsSubmitting(false);
     }

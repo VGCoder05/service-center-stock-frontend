@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import authService from '../services/authService';
+import showToast from '../utils/toast';
 
 const AuthContext = createContext();
 
@@ -39,14 +40,16 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.login(credentials);
       const { user, token } = response.data;
-      
+
       localStorage.setItem('token', token);
       setToken(token);
       setUser(user);
+      showToast.success(`Welcome back, ${user.fullName}!`);
       return { success: true };
     } catch (err) {
       const message = err.response?.data?.error || 'Login failed';
       setError(message);
+      showToast.error(message);
       return { success: false, error: message };
     } finally {
       setLoading(false);
@@ -62,14 +65,16 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.register(userData);
       const { user, token } = response.data;
-      
+
       localStorage.setItem('token', token);
       setToken(token);
       setUser(user);
+      showToast.success('Account created successfully!');
       return { success: true };
     } catch (err) {
       const message = err.response?.data?.error || 'Registration failed';
       setError(message);
+      showToast.error(message)
       return { success: false, error: message };
     } finally {
       setLoading(false);
@@ -84,6 +89,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setError(null);
+    showToast.info('Logged out successfully');
   };
 
   // ===================

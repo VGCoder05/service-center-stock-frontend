@@ -9,6 +9,10 @@ import Customers from './pages/settings/Customers';
 import BillList from './pages/bills/BillList';
 import BillForm from './pages/bills/BillForm';
 import BillDetails from './pages/bills/BillDetails';
+import SerialDetails from './pages/serials/SerialDetails';
+import CategoryView from './pages/categories/CategoryView';
+import Dashboard from './pages/Dashboard';
+import Reports from './pages/reports/Reports';
 
 
 // Protected Route wrapper
@@ -33,23 +37,6 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
-// Navigation Link component
-const NavLink = ({ to, children }) => {
-  const location = useLocation();
-  const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
-
-  return (
-    <Link
-      to={to}
-      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive
-        ? 'bg-blue-50 text-blue-700'
-        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-        }`}
-    >
-      {children}
-    </Link>
-  );
-};
 
 // Layout with navigation
 const AppLayout = ({ children }) => {
@@ -69,14 +56,14 @@ const AppLayout = ({ children }) => {
 };
 
 // Dashboard placeholder
-const Dashboard = () => {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Dashboard</h1>
-      <p className="text-gray-600">Dashboard coming soon...</p>
-    </div>
-  );
-};
+// const Dashboard = () => {
+//   return (
+//     <div className="p-6">
+//       <h1 className="text-2xl font-bold text-gray-900 mb-4">Dashboard</h1>
+//       <p className="text-gray-600">Dashboard coming soon...</p>
+//     </div>
+//   );
+// };
 
 
 function App() {
@@ -113,7 +100,7 @@ function App() {
           }
         />
 
-          {/* Bills */}
+        {/* Bills */}
         <Route
           path="/bills"
           element={
@@ -134,6 +121,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+                <Route
+          path="/bills/:id"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <BillDetails />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/bills/:id/edit"
           element={
@@ -144,7 +141,54 @@ function App() {
             </ProtectedRoute>
           }
         />
-{/* Master Data */}
+
+        {/* Serials */}
+                <Route
+          path="/serials/search"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <SearchResults />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/serials/:id"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <SerialDetails />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Categories */}
+        <Route
+          path="/categories/:category"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <CategoryView />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+                {/* Reports */}
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Reports />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Master Data */}
         <Route
           path="/suppliers"
           element={
@@ -197,3 +241,5 @@ function App() {
 }
 
 export default App;
+
+//  git commit -m "Some fixes in navbar & added serial number pages"

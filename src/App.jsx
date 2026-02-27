@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/layout/Navbar';
 import Login from './pages/auth/Login';
@@ -6,6 +6,10 @@ import Register from './pages/auth/Register';
 import Suppliers from './pages/settings/Suppliers';
 import Parts from './pages/settings/Parts';
 import Customers from './pages/settings/Customers';
+import BillList from './pages/bills/BillList';
+import BillForm from './pages/bills/BillForm';
+import BillDetails from './pages/bills/BillDetails';
+
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -32,7 +36,7 @@ const PublicRoute = ({ children }) => {
 // Navigation Link component
 const NavLink = ({ to, children }) => {
   const location = useLocation();
-  const isActive = location.pathname === to;
+  const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
 
   return (
     <Link
@@ -54,7 +58,7 @@ const AppLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
-      <Navbar />
+      <Navbar user={user} logout={logout} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto">
@@ -74,32 +78,6 @@ const Dashboard = () => {
   );
 };
 
-// Temporary Dashboard placeholder
-// const Dashboard = () => {
-//   const { user, logout } = useAuth();
-
-//   return (
-//     <div className="min-h-screen bg-gray-50 p-8">
-//       <div className="max-w-4xl mx-auto">
-//         <div className="card">
-//           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-//             Dashboard
-//           </h1>
-//           <p className="text-gray-600 mb-4">
-//             Welcome, <span className="font-semibold">{user?.fullName}</span>!
-//           </p>
-//           <div className="flex gap-2 mb-4">
-//             <span className="badge-in-stock">{user?.role}</span>
-//             <span className="text-sm text-gray-500">{user?.email}</span>
-//           </div>
-//           <button onClick={logout} className="btn-danger">
-//             Logout
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
 
 function App() {
   return (
@@ -134,6 +112,39 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+          {/* Bills */}
+        <Route
+          path="/bills"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <BillList />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bills/new"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <BillForm />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bills/:id/edit"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <BillForm />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+{/* Master Data */}
         <Route
           path="/suppliers"
           element={

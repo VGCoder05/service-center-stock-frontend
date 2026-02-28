@@ -56,8 +56,8 @@ const Navbar = ({ user, logout }) => {
           {/* Center Nav - Desktop */}
           <div className="hidden md:flex items-center gap-1 bg-gray-100 rounded-full px-2 py-1">
             {
-              Links.map((item) => (
-                <NavLink to={item.to}>{item.label}</NavLink>
+              Links.map((item, index) => (
+                <NavLink key={index} to={item.to} >{item.label}</NavLink>
               ))
             }
           </div>

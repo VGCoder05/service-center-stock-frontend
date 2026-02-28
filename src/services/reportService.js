@@ -7,13 +7,10 @@ const reportService = {
     return response.data;
   },
 
-  // Export stock valuation
+  // Export stock valuation (Removed blob, returns JSON)
   exportStockValuation: async (params = {}) => {
-    const response = await api.get('/reports/valuation/export', {
-      params,
-      responseType: 'blob'
-    });
-    return response;
+    const response = await api.get('/reports/valuation/export', { params });
+    return response.data; 
   },
 
   // Get IN_STOCK by bill
@@ -22,13 +19,10 @@ const reportService = {
     return response.data;
   },
 
-  // Export IN_STOCK by bill
+  // Export IN_STOCK by bill (Removed blob, returns JSON)
   exportInStockByBill: async (params = {}) => {
-    const response = await api.get('/reports/in-stock/export', {
-      params,
-      responseType: 'blob'
-    });
-    return response;
+    const response = await api.get('/reports/in-stock/export', { params });
+    return response.data;
   },
 
   // Get SPU report
@@ -37,13 +31,10 @@ const reportService = {
     return response.data;
   },
 
-  // Export SPU report
+  // Export SPU report (Removed blob, returns JSON)
   exportSPUReport: async (params = {}) => {
-    const response = await api.get('/reports/spu/export', {
-      params,
-      responseType: 'blob'
-    });
-    return response;
+    const response = await api.get('/reports/spu/export', { params });
+    return response.data;
   },
 
   // Get category report

@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import reportService, { downloadBlob } from '../../services/reportService';
 import showToast from '../../utils/toast';
 import { CATEGORY_CONFIG } from '../../utils/constants';
+import ClientExcelService from '../../services/clientExcelService'; // Adjust path if needed
 
 // Report type options
 const REPORT_TYPES = [
@@ -82,6 +83,48 @@ const Reports = () => {
   }, [selectedReport, startDate, endDate]);
 
   // Handle export
+  // const handleExport = async () => {
+  //   setExporting(true);
+
+  //   try {
+  //     const params = {};
+  //     if (startDate) params.startDate = startDate;
+  //     if (endDate) params.endDate = endDate;
+
+  //     let response;
+  //     let filename;
+  //     const dateStr = startDate && endDate ? `${startDate}_to_${endDate}` : 'all-time';
+
+  //     switch (selectedReport) {
+  //       case 'valuation':
+  //         response = await reportService.exportStockValuation(params);
+  //         filename = `StockValuation_${dateStr}.xlsx`;
+  //         break;
+  //       case 'in-stock':
+  //         response = await reportService.exportInStockByBill(params);
+  //         filename = `InStock_BillWise_${dateStr}.xlsx`;
+  //         break;
+  //       case 'spu-pending':
+  //         response = await reportService.exportSPUReport({ ...params, status: 'pending' });
+  //         filename = `SPU_Pending_${dateStr}.xlsx`;
+  //         break;
+  //       case 'spu-cleared':
+  //         response = await reportService.exportSPUReport({ ...params, status: 'cleared' });
+  //         filename = `SPU_Cleared_${dateStr}.xlsx`;
+  //         break;
+  //       default:
+  //         return;
+  //     }
+
+  //     downloadBlob(response.data, filename);
+  //     showToast.success('Report exported successfully!');
+  //   } catch (err) {
+  //     showToast.error('Failed to export report');
+  //   } finally {
+  //     setExporting(false);
+  //   }
+  // };
+  // Handle export
   const handleExport = async () => {
     setExporting(true);
 
@@ -90,34 +133,48 @@ const Reports = () => {
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
 
-      let response;
+      let apiResponse;
       let filename;
+      let buffer;
       const dateStr = startDate && endDate ? `${startDate}_to_${endDate}` : 'all-time';
 
+      // 1. Fetch JSON Data & 2. Generate Buffer
       switch (selectedReport) {
         case 'valuation':
-          response = await reportService.exportStockValuation(params);
+          apiResponse = await reportService.exportStockValuation(params);
+          buffer = await ClientExcelService.generateStockValuation(apiResponse.data, { startDate, endDate });
           filename = `StockValuation_${dateStr}.xlsx`;
           break;
         case 'in-stock':
-          response = await reportService.exportInStockByBill(params);
+          apiResponse = await reportService.exportInStockByBill(params);
+          buffer = await ClientExcelService.generateBillWiseReport(apiResponse.data, { startDate, endDate });
           filename = `InStock_BillWise_${dateStr}.xlsx`;
           break;
         case 'spu-pending':
-          response = await reportService.exportSPUReport({ ...params, status: 'pending' });
+          apiResponse = await reportService.exportSPUReport({ ...params, status: 'pending' });
+          buffer = await ClientExcelService.generateSPUReport(apiResponse.data, { startDate, endDate, status: 'SPU_PENDING' });
           filename = `SPU_Pending_${dateStr}.xlsx`;
           break;
         case 'spu-cleared':
-          response = await reportService.exportSPUReport({ ...params, status: 'cleared' });
+          apiResponse = await reportService.exportSPUReport({ ...params, status: 'cleared' });
+          buffer = await ClientExcelService.generateSPUReport(apiResponse.data, { startDate, endDate, status: 'SPU_CLEARED' });
           filename = `SPU_Cleared_${dateStr}.xlsx`;
           break;
         default:
           return;
       }
 
-      downloadBlob(response.data, filename);
+      // 3. Convert Buffer to Blob
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+
+      // 4. Trigger Download
+      downloadBlob(blob, filename);
       showToast.success('Report exported successfully!');
+      
     } catch (err) {
+      console.error('Export error:', err);
       showToast.error('Failed to export report');
     } finally {
       setExporting(false);

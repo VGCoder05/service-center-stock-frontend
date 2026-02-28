@@ -9,6 +9,7 @@ import Customers from './pages/settings/Customers';
 import BillList from './pages/bills/BillList';
 import BillForm from './pages/bills/BillForm';
 import BillDetails from './pages/bills/BillDetails';
+import SearchResults from './pages/serials/SearchResults';
 import SerialDetails from './pages/serials/SerialDetails';
 import CategoryView from './pages/categories/CategoryView';
 import Dashboard from './pages/dashboard/Dashboard';

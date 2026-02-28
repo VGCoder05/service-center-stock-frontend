@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
-import dashboardService from '../services/dashboardService';
-import showToast from '../utils/toast';
-import { CATEGORY_CONFIG } from '../utils/constants';
+import dashboardService from '../../services/dashboardService';
+import showToast from '../../utils/toast';
+import { CATEGORY_CONFIG } from '../../utils/constants';
 
 // Quick date range presets
 const DATE_PRESETS = [

@@ -21,8 +21,8 @@ const schema = yup.object({
     .string()
     .max(100, 'Contact person cannot exceed 100 characters'),
   phone: yup
-    .number()
-    .max(12, 'Phone cannot exceed 10 characters'),
+    .string()
+    .max(10, 'Phone cannot exceed 10 characters'),
   email: yup
     .string()
     .email('Please enter a valid email'),

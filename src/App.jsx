@@ -11,7 +11,7 @@ import BillForm from './pages/bills/BillForm';
 import BillDetails from './pages/bills/BillDetails';
 import SerialDetails from './pages/serials/SerialDetails';
 import CategoryView from './pages/categories/CategoryView';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/dashboard/Dashboard';
 import Reports from './pages/reports/Reports';
 
 

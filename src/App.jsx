@@ -15,6 +15,7 @@ import SerialDetails from './pages/serials/SerialDetails';
 import CategoryView from './pages/categories/CategoryView';
 import Dashboard from './pages/dashboard/Dashboard';
 import Reports from './pages/reports/Reports';
+import ExcelImport from './pages/import/ExcelImport';
 
 
 // Protected Route wrapper
@@ -174,6 +175,18 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <Reports />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Import excel */}
+        <Route
+          path="/import"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <ExcelImport />
               </AppLayout>
             </ProtectedRoute>
           }

@@ -267,7 +267,16 @@ const BillDetails = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-sm font-medium">{serial.partName}</div>
+                      {serial.partId ? (
+                        <Link
+                          to={`/parts/${serial.partId._id || serial.partId}`}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                        >
+                          {serial.partName}
+                        </Link>
+                      ) : (
+                        <div className="text-sm font-medium">{serial.partName}</div>
+                      )}
                       {serial.partCode && (
                         <div className="text-xs text-gray-500">{serial.partCode}</div>
                       )}

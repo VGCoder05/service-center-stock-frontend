@@ -5,6 +5,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Suppliers from './pages/settings/Suppliers';
 import Parts from './pages/settings/Parts';
+import PartDetail from './pages/settings/PartDetail';
 import Customers from './pages/settings/Customers';
 import BillList from './pages/bills/BillList';
 import BillForm from './pages/bills/BillForm';
@@ -55,17 +56,6 @@ const AppLayout = ({ children }) => {
     </div>
   );
 };
-
-// Dashboard placeholder
-// const Dashboard = () => {
-//   return (
-//     <div className="p-6">
-//       <h1 className="text-2xl font-bold text-gray-900 mb-4">Dashboard</h1>
-//       <p className="text-gray-600">Dashboard coming soon...</p>
-//     </div>
-//   );
-// };
-
 
 function App() {
   return (
@@ -122,7 +112,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-                <Route
+        <Route
           path="/bills/:id"
           element={
             <ProtectedRoute>
@@ -144,7 +134,7 @@ function App() {
         />
 
         {/* Serials */}
-                <Route
+        <Route
           path="/serials/search"
           element={
             <ProtectedRoute>
@@ -164,7 +154,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
         {/* Categories */}
         <Route
           path="/categories/:category"
@@ -177,7 +167,7 @@ function App() {
           }
         />
 
-                {/* Reports */}
+        {/* Reports */}
         <Route
           path="/reports"
           element={
@@ -210,6 +200,13 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/parts/:id" element={
+          <ProtectedRoute>
+            <AppLayout>
+              <PartDetail />
+            </AppLayout>
+          </ProtectedRoute>
+        } />
         <Route
           path="/customers"
           element={

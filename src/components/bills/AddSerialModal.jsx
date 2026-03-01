@@ -1,21 +1,24 @@
+// src/components/bills/AddSerialModal.jsx
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Modal from '../common/Modal';
-import partsService from '../../services/partsService';
+import PartSelector from './PartSelector';                     // ← NEW import
+// import partsService from '../../services/partsService';     // ← REMOVE (PartSelector handles this)
 import serialService from '../../services/serialService';
 import showToast from '../../utils/toast';
 import { CATEGORIES, CATEGORY_CONFIG } from '../../utils/constants';
 
-// Entry mode options
+// Entry mode options (same)
 const ENTRY_MODES = {
   SINGLE: 'single',
   BULK: 'bulk',
   AUTO: 'auto'
 };
 
-// Validation schema for single entry
+// Validation schema for single entry (same)
 const singleSchema = yup.object({
   serialNumber: yup
     .string()
@@ -32,7 +35,7 @@ const singleSchema = yup.object({
   currentCategory: yup.string()
 });
 
-// Validation schema for bulk entry
+// Validation schema for bulk entry (same)
 const bulkSchema = yup.object({
   serialNumbers: yup
     .string()
@@ -48,7 +51,7 @@ const bulkSchema = yup.object({
   currentCategory: yup.string()
 });
 
-// Validation schema for auto-generate
+// Validation schema for auto-generate (same)
 const autoSchema = yup.object({
   prefix: yup
     .string()
@@ -77,11 +80,22 @@ const autoSchema = yup.object({
 
 const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
   const [entryMode, setEntryMode] = useState(ENTRY_MODES.SINGLE);
-  const [parts, setParts] = useState([]);
+  // const [parts, setParts] = useState([]);                   // ← REMOVE
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedPart, setSelectedPart] = useState(null);
+  // const [selectedPart, setSelectedPart] = useState(null);   // ← REMOVE
 
-  // Get schema based on entry mode
+  // ════════════════════════════════════════════════════
+  // NEW: Part data managed by PartSelector
+  // ════════════════════════════════════════════════════
+  const [partData, setPartData] = useState({
+    partId: null,
+    partCode: '',
+    partName: '',
+    avgUnitPrice: 0,
+    isNew: false
+  });
+
+  // Get schema based on entry mode (same)
   const getSchema = () => {
     switch (entryMode) {
       case ENTRY_MODES.BULK:
@@ -108,20 +122,22 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
     }
   });
 
-  // Fetch parts for autocomplete
-  useEffect(() => {
-    const fetchParts = async () => {
-      try {
-        const response = await partsService.getAllList();
-        setParts(response.data);
-      } catch (err) {
-        console.error('Failed to fetch parts:', err);
-      }
-    };
-    if (isOpen) {
-      fetchParts();
-    }
-  }, [isOpen]);
+  // ════════════════════════════════════════════════════
+  // REMOVE this entire useEffect (PartSelector loads its own data)
+  // ════════════════════════════════════════════════════
+  // useEffect(() => {
+  //   const fetchParts = async () => {
+  //     try {
+  //       const response = await partsService.getAllList();
+  //       setParts(response.data);
+  //     } catch (err) {
+  //       console.error('Failed to fetch parts:', err);
+  //     }
+  //   };
+  //   if (isOpen) {
+  //     fetchParts();
+  //   }
+  // }, [isOpen]);
 
   // Reset form when modal opens or entry mode changes
   useEffect(() => {
@@ -132,24 +148,53 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
         prefix: 'SN-',
         startNumber: 1,
         count: 1,
-        partId: '',
-        partCode: '',
+        // partId: '',                                         // ← REMOVE
+        // partCode: '',                                       // ← REMOVE
         partName: '',
         unitPrice: 0,
         currentCategory: 'UNCATEGORIZED'
       });
-      setSelectedPart(null);
+      // setSelectedPart(null);                                // ← REMOVE
+
+      // ════════════════════════════════════════════════════
+      // NEW: Reset part selector state
+      // ════════════════════════════════════════════════════
+      setPartData({
+        partId: null,
+        partCode: '',
+        partName: '',
+        avgUnitPrice: 0,
+        isNew: false
+      });
     }
   }, [isOpen, entryMode, reset]);
 
-  // Handle part selection
-  const handlePartSelect = (partId) => {
-    const part = parts.find(p => p._id === partId);
-    if (part) {
-      setSelectedPart(part);
-      setValue('partName', part.partName);
-      setValue('partCode', part.partCode);
-      setValue('unitPrice', part.avgUnitPrice || 0);
+  // ════════════════════════════════════════════════════
+  // REMOVE old handlePartSelect
+  // ════════════════════════════════════════════════════
+  // const handlePartSelect = (partId) => {
+  //   const part = parts.find(p => p._id === partId);
+  //   if (part) {
+  //     setSelectedPart(part);
+  //     setValue('partName', part.partName);
+  //     setValue('partCode', part.partCode);
+  //     setValue('unitPrice', part.avgUnitPrice || 0);
+  //   }
+  // };
+
+  // ════════════════════════════════════════════════════
+  // NEW: Handle part selection from PartSelector
+  // ════════════════════════════════════════════════════
+  const handlePartChange = (data) => {
+    setPartData(data);
+
+    // Sync with react-hook-form so validation works
+    setValue('partName', data.partName, { shouldValidate: true });
+
+    // Auto-fill price only if user hasn't manually edited it
+    // OR if a catalog part was selected (not a new part typed)
+    if (data.partId || data.avgUnitPrice > 0) {
+      setValue('unitPrice', data.avgUnitPrice || 0);
     }
   };
 
@@ -162,19 +207,20 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
 
       switch (entryMode) {
         case ENTRY_MODES.SINGLE:
-          // Single serial number
           items = [{
             serialNumber: data.serialNumber,
-            partId: selectedPart?._id,
-            partCode: data.partCode || selectedPart?.partCode,
-            partName: data.partName,
+            // ════════════════════════════════════════════════
+            // CHANGED: Use partData from PartSelector
+            // ════════════════════════════════════════════════
+            partId: partData.partId,
+            partCode: partData.partCode,
+            partName: data.partName,        // from react-hook-form (synced)
             unitPrice: data.unitPrice,
             currentCategory: data.currentCategory
           }];
           break;
 
         case ENTRY_MODES.BULK:
-          // Parse comma/newline separated serial numbers
           const serialNumbers = data.serialNumbers
             .split(/[,\n]/)
             .map(sn => sn.trim())
@@ -188,8 +234,11 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
 
           items = serialNumbers.map(sn => ({
             serialNumber: sn,
-            partId: selectedPart?._id,
-            partCode: data.partCode || selectedPart?.partCode,
+            // ════════════════════════════════════════════════
+            // CHANGED: Use partData from PartSelector
+            // ════════════════════════════════════════════════
+            partId: partData.partId,
+            partCode: partData.partCode,
             partName: data.partName,
             unitPrice: data.unitPrice,
             currentCategory: data.currentCategory
@@ -197,14 +246,16 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
           break;
 
         case ENTRY_MODES.AUTO:
-          // Auto-generate serial numbers
           for (let i = 0; i < data.count; i++) {
             const num = data.startNumber + i;
             const paddedNum = String(num).padStart(4, '0');
             items.push({
               serialNumber: `${data.prefix}${paddedNum}`,
-              partId: selectedPart?._id,
-              partCode: data.partCode || selectedPart?.partCode,
+              // ════════════════════════════════════════════════
+              // CHANGED: Use partData from PartSelector
+              // ════════════════════════════════════════════════
+              partId: partData.partId,
+              partCode: partData.partCode,
               partName: data.partName,
               unitPrice: data.unitPrice,
               currentCategory: data.currentCategory
@@ -213,7 +264,7 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
           break;
       }
 
-      // Create serials
+      // Create serials (same logic)
       if (items.length === 1) {
         await serialService.create({
           billId,
@@ -244,7 +295,7 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
       title="Add Serial Numbers"
       size="lg"
     >
-      {/* Entry Mode Tabs */}
+      {/* Entry Mode Tabs — SAME, NO CHANGES */}
       <div className="flex border-b border-gray-200 mb-4">
         <button
           type="button"
@@ -282,7 +333,7 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Single Entry Mode */}
+        {/* Single Entry Mode — SAME */}
         {entryMode === ENTRY_MODES.SINGLE && (
           <div>
             <label className="label">Serial Number *</label>
@@ -298,7 +349,7 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
           </div>
         )}
 
-        {/* Bulk Entry Mode */}
+        {/* Bulk Entry Mode — SAME */}
         {entryMode === ENTRY_MODES.BULK && (
           <div>
             <label className="label">Serial Numbers * (comma or newline separated)</label>
@@ -317,7 +368,7 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
           </div>
         )}
 
-        {/* Auto Generate Mode */}
+        {/* Auto Generate Mode — SAME */}
         {entryMode === ENTRY_MODES.AUTO && (
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -367,7 +418,11 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
           </div>
         )}
 
-        {/* Part Selection */}
+        {/* ════════════════════════════════════════════════════════ */}
+        {/* CHANGED: Part Selection — Replace old dropdown + input  */}
+        {/* ════════════════════════════════════════════════════════ */}
+
+        {/* OLD CODE — REMOVE THIS ENTIRE BLOCK:
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Select Part (optional)</label>
@@ -396,8 +451,49 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
             )}
           </div>
         </div>
+        */}
 
-        {/* Price and Category */}
+        {/* NEW: PartSelector replaces both fields */}
+        <div>
+          <PartSelector
+            value={partData}
+            onChange={handlePartChange}
+            error={errors.partName?.message || ''}
+            required={true}
+          />
+
+          {/* Show "New part" indicator when user types a name not in catalog */}
+          {partData.isNew && partData.partName && (
+            <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-amber-50 
+                            border border-amber-200 rounded-lg">
+              <span className="text-amber-600 text-sm">ℹ️</span>
+              <p className="text-sm text-amber-700">
+                <span className="font-medium">"{partData.partName}"</span> is not 
+                in the catalog. It will be automatically added to Parts Master 
+                when you save.
+              </p>
+            </div>
+          )}
+
+          {/* Show selected part info when a catalog part is chosen */}
+          {partData.partId && partData.partCode && (
+            <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-green-50 
+                            border border-green-200 rounded-lg">
+              <span className="text-green-600 text-sm">✓</span>
+              <p className="text-sm text-green-700">
+                Linked to <span className="font-mono font-medium">{partData.partCode}</span>
+                {partData.avgUnitPrice > 0 && (
+                  <span> • Avg Price: ₹{partData.avgUnitPrice}</span>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Hidden input so react-hook-form validation still works for partName */}
+          <input type="hidden" {...register('partName')} />
+        </div>
+
+        {/* Price and Category — SAME STRUCTURE, minor label change */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Unit Price (₹) *</label>
@@ -411,6 +507,12 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
             />
             {errors.unitPrice && (
               <p className="error-message">{errors.unitPrice.message}</p>
+            )}
+            {/* ══ NEW: helper text ══ */}
+            {partData.partId && (
+              <p className="text-xs text-gray-500 mt-1">
+                Auto-filled from catalog. You can override this.
+              </p>
             )}
           </div>
           <div>
@@ -431,7 +533,7 @@ const AddSerialModal = ({ isOpen, onClose, billId, onSuccess }) => {
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Actions — SAME */}
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
           <button
             type="button"

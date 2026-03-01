@@ -41,6 +41,28 @@ const partsService = {
   delete: async (id) => {
     const response = await api.delete(`/master/parts/${id}`);
     return response.data;
+  },
+
+   // ───────── NEW ENDPOINTS ───────────────────────
+
+ getPartsWithStock: (params) => api.get(`/master/parts/with-stock`, { params }),
+
+  // Get stock breakdown for a single part
+  getPartStock: (id) => api.get(`/master/parts/${id}/stock`),
+
+  // Get all serials for a specific part
+  getPartSerials: (id, params) => api.get(`/master/parts/${id}/serials`, { params }),
+
+  // Search parts for autocomplete (lightweight)
+  searchParts: async (searchTerm) => {
+    if (!searchTerm || searchTerm.length < 1) return [];
+    const response = await api.get(`/master/parts/list/all`);
+    // Filter on client side since it's a small list
+    const parts = response.data.data || [];
+    return parts.filter(part =>
+      part.partName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      part.partCode.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }
 };
 

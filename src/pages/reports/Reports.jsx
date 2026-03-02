@@ -7,27 +7,27 @@ import ClientExcelService from '../../services/clientExcelService'; // Adjust pa
 
 // Report type options
 const REPORT_TYPES = [
-  { 
-    id: 'valuation', 
-    name: 'Stock Valuation', 
+  {
+    id: 'valuation',
+    name: 'Stock Valuation',
     description: 'Summary and details of all categories',
     icon: '📊'
   },
-  { 
-    id: 'in-stock', 
-    name: 'IN STOCK (Bill-wise)', 
+  {
+    id: 'in-stock',
+    name: 'IN STOCK (Bill-wise)',
     description: 'In-stock items grouped by bill',
     icon: '📦'
   },
-  { 
-    id: 'spu-pending', 
-    name: 'SPU Pending', 
+  {
+    id: 'spu-pending',
+    name: 'SPU Pending',
     description: 'Pending SPU items grouped by SPU ID',
     icon: '🔴'
   },
-  { 
-    id: 'spu-cleared', 
-    name: 'SPU Cleared', 
+  {
+    id: 'spu-cleared',
+    name: 'SPU Cleared',
     description: 'Cleared SPU items grouped by SPU ID',
     icon: '🟢'
   }
@@ -56,20 +56,25 @@ const Reports = () => {
       switch (selectedReport) {
         case 'valuation':
           response = await reportService.getStockValuation(params);
+          console.log("valuation Data : ", response);
           break;
         case 'in-stock':
           response = await reportService.getInStockByBill(params);
+          console.log("in-stock Data : ", response);
           break;
         case 'spu-pending':
           response = await reportService.getSPUReport({ ...params, status: 'pending' });
+          console.log("spu-pending Data : ", response);
           break;
         case 'spu-cleared':
           response = await reportService.getSPUReport({ ...params, status: 'cleared' });
+          console.log("spu-cleared Data : ", response);
           break;
         default:
           return;
       }
       setPreviewData(response);
+      console.log("Full previewData structure:", JSON.stringify(response, null, 2));
     } catch (err) {
       showToast.error('Failed to load report preview');
     } finally {
@@ -165,14 +170,14 @@ const Reports = () => {
       }
 
       // 3. Convert Buffer to Blob
-      const blob = new Blob([buffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
 
       // 4. Trigger Download
       downloadBlob(blob, filename);
       showToast.success('Report exported successfully!');
-      
+
     } catch (err) {
       console.error('Export error:', err);
       showToast.error('Failed to export report');
@@ -224,7 +229,9 @@ const Reports = () => {
 
   // Valuation preview
   const renderValuationPreview = () => {
-    const categories = previewData.data?.categories || {};
+    const rawData = previewData.data || previewData || {};
+    const categories = rawData.categories || {};
+    // const categories = previewData.data?.categories || {};
     let totalQty = 0;
     let totalValue = 0;
 
@@ -248,7 +255,7 @@ const Reports = () => {
             {Object.entries(categories).map(([key, data]) => {
               const config = CATEGORY_CONFIG[key];
               const percentage = totalValue > 0 ? ((data.totalValue / totalValue) * 100).toFixed(1) : 0;
-              
+
               return (
                 <tr key={key} className={config?.bgColor || ''}>
                   <td className={`px-4 py-3 font-medium ${config?.textColor || ''}`}>
@@ -276,8 +283,11 @@ const Reports = () => {
 
   // IN_STOCK preview
   const renderInStockPreview = () => {
-    const bills = previewData.data || [];
-    const summary = previewData.summary || {};
+    const rawData = previewData.data || previewData || {};
+    const bills = Array.isArray(rawData)
+      ? rawData
+      : rawData.bills || [];
+    const summary = rawData.summary || previewData.summary || {};
 
     return (
       <div>
@@ -285,7 +295,7 @@ const Reports = () => {
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="bg-blue-50 p-4 rounded-lg text-center">
             <p className="text-sm text-gray-600">Total Bills</p>
-            <p className="text-2xl font-bold text-blue-700">{summary.totalBills || 0}</p>
+            <p className="text-2xl font-bold text-blue-700">{summary.totalBills || bills.length || 0}</p>
           </div>
           <div className="bg-blue-50 p-4 rounded-lg text-center">
             <p className="text-sm text-gray-600">Total Items</p>
@@ -335,8 +345,11 @@ const Reports = () => {
 
   // SPU preview
   const renderSPUPreview = () => {
-    const spus = previewData.data || [];
-    const summary = previewData.summary || {};
+    const rawData = previewData.data || previewData || {};
+    const spus = Array.isArray(rawData)
+      ? rawData
+      : rawData.spus || rawData.groups || [];
+    const summary = rawData.summary || previewData.summary || {};
 
     return (
       <div>
@@ -421,11 +434,10 @@ const Reports = () => {
                 <button
                   key={report.id}
                   onClick={() => setSelectedReport(report.id)}
-                  className={`p-3 rounded-lg border-2 text-left transition-all ${
-                    selectedReport === report.id
+                  className={`p-3 rounded-lg border-2 text-left transition-all ${selectedReport === report.id
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{report.icon}</span>
@@ -465,7 +477,7 @@ const Reports = () => {
           <p className="text-sm text-gray-500">
             {startDate || endDate ? (
               <>
-                Filtering parts received {startDate ? `from ${format(new Date(startDate), 'dd MMM yyyy')}` : ''} 
+                Filtering parts received {startDate ? `from ${format(new Date(startDate), 'dd MMM yyyy')}` : ''}
                 {endDate ? ` to ${format(new Date(endDate), 'dd MMM yyyy')}` : ''}
               </>
             ) : (

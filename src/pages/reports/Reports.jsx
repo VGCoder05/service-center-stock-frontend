@@ -3,9 +3,8 @@ import { format } from 'date-fns';
 import reportService, { downloadBlob } from '../../services/reportService';
 import showToast from '../../utils/toast';
 import { CATEGORY_CONFIG } from '../../utils/constants';
-import ClientExcelService from '../../services/clientExcelService'; // Adjust path if needed
+import ClientExcelService from '../../services/clientExcelService';
 
-// Report type options
 const REPORT_TYPES = [
   {
     id: 'valuation',
@@ -34,7 +33,6 @@ const REPORT_TYPES = [
 ];
 
 const Reports = () => {
-  // State
   const [selectedReport, setSelectedReport] = useState('valuation');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -42,7 +40,6 @@ const Reports = () => {
   const [exporting, setExporting] = useState(false);
   const [previewData, setPreviewData] = useState(null);
 
-  // Fetch preview data
   const fetchPreview = async () => {
     setLoading(true);
     setPreviewData(null);
@@ -56,25 +53,20 @@ const Reports = () => {
       switch (selectedReport) {
         case 'valuation':
           response = await reportService.getStockValuation(params);
-          console.log("valuation Data : ", response);
           break;
         case 'in-stock':
           response = await reportService.getInStockByBill(params);
-          console.log("in-stock Data : ", response);
           break;
         case 'spu-pending':
           response = await reportService.getSPUReport({ ...params, status: 'pending' });
-          console.log("spu-pending Data : ", response);
           break;
         case 'spu-cleared':
           response = await reportService.getSPUReport({ ...params, status: 'cleared' });
-          console.log("spu-cleared Data : ", response);
           break;
         default:
           return;
       }
       setPreviewData(response);
-      console.log("Full previewData structure:", JSON.stringify(response, null, 2));
     } catch (err) {
       showToast.error('Failed to load report preview');
     } finally {
@@ -82,54 +74,10 @@ const Reports = () => {
     }
   };
 
-  // Auto-fetch on filter change
   useEffect(() => {
     fetchPreview();
   }, [selectedReport, startDate, endDate]);
 
-  // Handle export
-  // const handleExport = async () => {
-  //   setExporting(true);
-
-  //   try {
-  //     const params = {};
-  //     if (startDate) params.startDate = startDate;
-  //     if (endDate) params.endDate = endDate;
-
-  //     let response;
-  //     let filename;
-  //     const dateStr = startDate && endDate ? `${startDate}_to_${endDate}` : 'all-time';
-
-  //     switch (selectedReport) {
-  //       case 'valuation':
-  //         response = await reportService.exportStockValuation(params);
-  //         filename = `StockValuation_${dateStr}.xlsx`;
-  //         break;
-  //       case 'in-stock':
-  //         response = await reportService.exportInStockByBill(params);
-  //         filename = `InStock_BillWise_${dateStr}.xlsx`;
-  //         break;
-  //       case 'spu-pending':
-  //         response = await reportService.exportSPUReport({ ...params, status: 'pending' });
-  //         filename = `SPU_Pending_${dateStr}.xlsx`;
-  //         break;
-  //       case 'spu-cleared':
-  //         response = await reportService.exportSPUReport({ ...params, status: 'cleared' });
-  //         filename = `SPU_Cleared_${dateStr}.xlsx`;
-  //         break;
-  //       default:
-  //         return;
-  //     }
-
-  //     downloadBlob(response.data, filename);
-  //     showToast.success('Report exported successfully!');
-  //   } catch (err) {
-  //     showToast.error('Failed to export report');
-  //   } finally {
-  //     setExporting(false);
-  //   }
-  // };
-  // Handle export
   const handleExport = async () => {
     setExporting(true);
 
@@ -143,7 +91,6 @@ const Reports = () => {
       let buffer;
       const dateStr = startDate && endDate ? `${startDate}_to_${endDate}` : 'all-time';
 
-      // 1. Fetch JSON Data & 2. Generate Buffer
       switch (selectedReport) {
         case 'valuation':
           apiResponse = await reportService.exportStockValuation(params);
@@ -169,12 +116,10 @@ const Reports = () => {
           return;
       }
 
-      // 3. Convert Buffer to Blob
       const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
 
-      // 4. Trigger Download
       downloadBlob(blob, filename);
       showToast.success('Report exported successfully!');
 
@@ -186,7 +131,6 @@ const Reports = () => {
     }
   };
 
-  // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -195,7 +139,15 @@ const Reports = () => {
     }).format(amount || 0);
   };
 
-  // Render preview based on report type
+  const formatDate = (date) => {
+    if (!date) return '-';
+    try {
+      return format(new Date(date), 'dd-MM-yyyy');
+    } catch {
+      return '-';
+    }
+  };
+
   const renderPreview = () => {
     if (loading) {
       return (
@@ -227,11 +179,12 @@ const Reports = () => {
     }
   };
 
-  // Valuation preview
+  // =====================
+  // VALUATION PREVIEW
+  // =====================
   const renderValuationPreview = () => {
     const rawData = previewData.data || previewData || {};
     const categories = rawData.categories || {};
-    // const categories = previewData.data?.categories || {};
     let totalQty = 0;
     let totalValue = 0;
 
@@ -255,7 +208,6 @@ const Reports = () => {
             {Object.entries(categories).map(([key, data]) => {
               const config = CATEGORY_CONFIG[key];
               const percentage = totalValue > 0 ? ((data.totalValue / totalValue) * 100).toFixed(1) : 0;
-
               return (
                 <tr key={key} className={config?.bgColor || ''}>
                   <td className={`px-4 py-3 font-medium ${config?.textColor || ''}`}>
@@ -281,13 +233,37 @@ const Reports = () => {
     );
   };
 
-  // IN_STOCK preview
+  // =====================
+  // IN STOCK PREVIEW — matches Excel: Voucher No., Company Bill, Supplier, Bill Date, Serial No., Part Name, Unit Price, Location
+  // =====================
   const renderInStockPreview = () => {
     const rawData = previewData.data || previewData || {};
-    const bills = Array.isArray(rawData)
-      ? rawData
-      : rawData.bills || [];
+    const bills = Array.isArray(rawData) ? rawData : rawData.bills || [];
     const summary = rawData.summary || previewData.summary || {};
+
+    // Flatten bills into serial-level rows for preview
+    const flatRows = [];
+    let totalSerials = 0;
+    bills.forEach(bill => {
+      (bill.serials || []).forEach((serial, idx) => {
+        flatRows.push({
+          // Show bill info only on first serial of each group
+          isFirstInGroup: idx === 0,
+          voucherNumber: bill.voucherNumber,
+          companyBillNumber: bill.companyBillNumber || '-',
+          supplierName: bill.supplierName || '-',
+          billDate: bill.billDate,
+          // Serial-level
+          serialNumber: serial.serialNumber,
+          partName: serial.partName,
+          unitPrice: serial.unitPrice,
+          location: serial.context?.location || '-'
+        });
+        totalSerials++;
+      });
+    });
+
+    const MAX_PREVIEW_ROWS = 50;
 
     return (
       <div>
@@ -299,7 +275,7 @@ const Reports = () => {
           </div>
           <div className="bg-blue-50 p-4 rounded-lg text-center">
             <p className="text-sm text-gray-600">Total Items</p>
-            <p className="text-2xl font-bold text-blue-700">{summary.totalItems || 0}</p>
+            <p className="text-2xl font-bold text-blue-700">{summary.totalItems || totalSerials}</p>
           </div>
           <div className="bg-blue-50 p-4 rounded-lg text-center">
             <p className="text-sm text-gray-600">Total Value</p>
@@ -307,49 +283,97 @@ const Reports = () => {
           </div>
         </div>
 
-        {/* Bill list */}
-        <div className="overflow-x-auto max-h-96">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+        {/* Detailed table matching Excel */}
+        <div className="overflow-x-auto max-h-[500px]">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-800 text-white sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Voucher No.</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Supplier</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Bill Date</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Items</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Value</th>
+                <th className="px-3 py-2 text-left font-semibold">Voucher No.</th>
+                <th className="px-3 py-2 text-left font-semibold">Company Bill</th>
+                <th className="px-3 py-2 text-left font-semibold">Supplier</th>
+                <th className="px-3 py-2 text-left font-semibold">Bill Date</th>
+                <th className="px-3 py-2 text-left font-semibold">Serial No.</th>
+                <th className="px-3 py-2 text-left font-semibold">Part Name</th>
+                <th className="px-3 py-2 text-right font-semibold">Unit Price</th>
+                <th className="px-3 py-2 text-left font-semibold">Location</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {bills.slice(0, 20).map((bill) => (
-                <tr key={bill._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-sm">{bill.voucherNumber}</td>
-                  <td className="px-4 py-3 text-sm">{bill.supplierName || '-'}</td>
-                  <td className="px-4 py-3 text-sm">
-                    {bill.billDate ? format(new Date(bill.billDate), 'dd-MM-yyyy') : '-'}
+            <tbody className="divide-y divide-gray-100">
+              {flatRows.slice(0, MAX_PREVIEW_ROWS).map((row, i) => (
+                <tr
+                  key={i}
+                  className={`hover:bg-blue-50 ${row.isFirstInGroup && i !== 0 ? 'border-t-2 border-blue-200' : ''}`}
+                >
+                  <td className="px-3 py-2 font-mono text-xs">
+                    {row.isFirstInGroup ? row.voucherNumber : ''}
                   </td>
-                  <td className="px-4 py-3 text-right">{bill.count}</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(bill.totalValue)}</td>
+                  <td className="px-3 py-2 text-xs">
+                    {row.isFirstInGroup ? row.companyBillNumber : ''}
+                  </td>
+                  <td className="px-3 py-2 text-xs">
+                    {row.isFirstInGroup ? row.supplierName : ''}
+                  </td>
+                  <td className="px-3 py-2 text-xs">
+                    {row.isFirstInGroup ? formatDate(row.billDate) : ''}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-xs">{row.serialNumber}</td>
+                  <td className="px-3 py-2 text-xs">{row.partName}</td>
+                  <td className="px-3 py-2 text-right text-xs">{formatCurrency(row.unitPrice)}</td>
+                  <td className="px-3 py-2 text-xs">{row.location}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {bills.length > 20 && (
+          {flatRows.length > MAX_PREVIEW_ROWS && (
             <p className="text-center text-sm text-gray-500 py-2">
-              Showing 20 of {bills.length} bills. Export for full data.
+              Showing {MAX_PREVIEW_ROWS} of {flatRows.length} items. Export for full data.
             </p>
+          )}
+          {flatRows.length === 0 && (
+            <p className="text-center text-sm text-gray-500 py-8">No in-stock items found.</p>
           )}
         </div>
       </div>
     );
   };
 
-  // SPU preview
+  // =====================
+  // SPU PREVIEW — matches Excel: SPU ID, Ticket ID, Customer, SPU Date, Voucher No., Company Bill No., Bill Date, Serial No., Part Name, Unit Price, Chargeable, Charge Amt, Payment, Note
+  // =====================
   const renderSPUPreview = () => {
     const rawData = previewData.data || previewData || {};
-    const spus = Array.isArray(rawData)
-      ? rawData
-      : rawData.spus || rawData.groups || [];
+    const spus = Array.isArray(rawData) ? rawData : rawData.spus || rawData.groups || [];
     const summary = rawData.summary || previewData.summary || {};
+
+    // Flatten SPUs into serial-level rows
+    const flatRows = [];
+    let totalSerials = 0;
+    spus.forEach(spu => {
+      (spu.serials || []).forEach((serial, idx) => {
+        flatRows.push({
+          isFirstInGroup: idx === 0,
+          // SPU-level (show only on first)
+          spuId: spu.spuId || '-',
+          ticketId: spu.ticketId || '-',
+          customerName: spu.customerName || '-',
+          spuDate: spu.spuDate,
+          // Serial-level (show on every row)
+          voucherNumber: serial.voucherNumber || '-',
+          companyBillNumber: serial.companyBillNumber || '-',
+          billDate: serial.billDate,
+          serialNumber: serial.serialNumber,
+          partName: serial.partName,
+          unitPrice: serial.unitPrice,
+          isChargeable: serial.context?.isChargeable || false,
+          chargeAmount: serial.context?.chargeAmount || 0,
+          paymentStatus: serial.context?.paymentStatus || '-',
+          notes: serial.context?.remarks || serial.context?.notes || '-'
+        });
+        totalSerials++;
+      });
+    });
+
+    const MAX_PREVIEW_ROWS = 50;
 
     return (
       <div>
@@ -357,11 +381,11 @@ const Reports = () => {
         <div className="grid grid-cols-4 gap-4 mb-4">
           <div className="bg-red-50 p-4 rounded-lg text-center">
             <p className="text-sm text-gray-600">Total SPUs</p>
-            <p className="text-2xl font-bold text-red-700">{summary.totalSPUs || 0}</p>
+            <p className="text-2xl font-bold text-red-700">{summary.totalSPUs || spus.length || 0}</p>
           </div>
           <div className="bg-red-50 p-4 rounded-lg text-center">
             <p className="text-sm text-gray-600">Total Items</p>
-            <p className="text-2xl font-bold text-red-700">{summary.totalItems || 0}</p>
+            <p className="text-2xl font-bold text-red-700">{summary.totalItems || totalSerials}</p>
           </div>
           <div className="bg-red-50 p-4 rounded-lg text-center">
             <p className="text-sm text-gray-600">Total Value</p>
@@ -373,42 +397,78 @@ const Reports = () => {
           </div>
         </div>
 
-        {/* SPU list */}
-        <div className="overflow-x-auto max-h-96">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+        {/* Detailed table matching Excel */}
+        <div className="overflow-x-auto max-h-[500px]">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-800 text-white sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SPU ID</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">SPU Date</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Items</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Value</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Chargeable</th>
+                <th className="px-3 py-2 text-left font-semibold">SPU ID</th>
+                <th className="px-3 py-2 text-left font-semibold">Ticket ID</th>
+                <th className="px-3 py-2 text-left font-semibold">Customer</th>
+                <th className="px-3 py-2 text-left font-semibold">SPU Date</th>
+                <th className="px-3 py-2 text-left font-semibold">Voucher No.</th>
+                <th className="px-3 py-2 text-left font-semibold">Company Bill No.</th>
+                <th className="px-3 py-2 text-left font-semibold">Bill Date</th>
+                <th className="px-3 py-2 text-left font-semibold">Serial No.</th>
+                <th className="px-3 py-2 text-left font-semibold">Part Name</th>
+                <th className="px-3 py-2 text-right font-semibold">Unit Price</th>
+                <th className="px-3 py-2 text-center font-semibold">Chargeable</th>
+                <th className="px-3 py-2 text-right font-semibold">Charge Amt</th>
+                <th className="px-3 py-2 text-left font-semibold">Payment</th>
+                <th className="px-3 py-2 text-left font-semibold">Note</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {spus.slice(0, 20).map((spu) => (
-                <tr key={spu._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-sm">{spu.spuId || '-'}</td>
-                  <td className="px-4 py-3 text-sm">{spu.customerName || '-'}</td>
-                  <td className="px-4 py-3 text-sm">
-                    {spu.spuDate ? format(new Date(spu.spuDate), 'dd-MM-yyyy') : '-'}
+            <tbody className="divide-y divide-gray-100">
+              {flatRows.slice(0, MAX_PREVIEW_ROWS).map((row, i) => (
+                <tr
+                  key={i}
+                  className={`hover:bg-red-50 ${row.isFirstInGroup && i !== 0 ? 'border-t-2 border-red-200' : ''}`}
+                >
+                  <td className="px-3 py-2 font-mono text-xs">
+                    {row.isFirstInGroup ? row.spuId : ''}
                   </td>
-                  <td className="px-4 py-3 text-right">{spu.count}</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(spu.totalValue)}</td>
-                  <td className="px-4 py-3 text-right">
-                    {spu.chargeableAmount > 0 ? (
-                      <span className="text-orange-600">{formatCurrency(spu.chargeableAmount)}</span>
-                    ) : '-'}
+                  <td className="px-3 py-2 text-xs">
+                    {row.isFirstInGroup ? row.ticketId : ''}
+                  </td>
+                  <td className="px-3 py-2 text-xs">
+                    {row.isFirstInGroup ? row.customerName : ''}
+                  </td>
+                  <td className="px-3 py-2 text-xs">
+                    {row.isFirstInGroup ? formatDate(row.spuDate) : ''}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-xs">{row.voucherNumber}</td>
+                  <td className="px-3 py-2 text-xs">{row.companyBillNumber}</td>
+                  <td className="px-3 py-2 text-xs">{formatDate(row.billDate)}</td>
+                  <td className="px-3 py-2 font-mono text-xs">{row.serialNumber}</td>
+                  <td className="px-3 py-2 text-xs">{row.partName}</td>
+                  <td className="px-3 py-2 text-right text-xs">{formatCurrency(row.unitPrice)}</td>
+                  <td className="px-3 py-2 text-center text-xs">
+                    {row.isChargeable ? (
+                      <span className="text-orange-600 font-medium">Yes</span>
+                    ) : (
+                      <span className="text-gray-400">No</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs">
+                    {row.isChargeable ? formatCurrency(row.chargeAmount) : '-'}
+                  </td>
+                  <td className="px-3 py-2 text-xs">
+                    {row.isChargeable ? row.paymentStatus : '-'}
+                  </td>
+                  <td className="px-3 py-2 text-xs max-w-[200px] truncate" title={row.notes}>
+                    {row.notes}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {spus.length > 20 && (
+          {flatRows.length > MAX_PREVIEW_ROWS && (
             <p className="text-center text-sm text-gray-500 py-2">
-              Showing 20 of {spus.length} SPUs. Export for full data.
+              Showing {MAX_PREVIEW_ROWS} of {flatRows.length} items. Export for full data.
             </p>
+          )}
+          {flatRows.length === 0 && (
+            <p className="text-center text-sm text-gray-500 py-8">No SPU items found.</p>
           )}
         </div>
       </div>
@@ -426,7 +486,6 @@ const Reports = () => {
       {/* Report Selection & Filters */}
       <div className="card mb-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Report Type */}
           <div className="lg:col-span-2">
             <label className="label">Report Type</label>
             <div className="grid grid-cols-2 gap-2">
@@ -434,10 +493,11 @@ const Reports = () => {
                 <button
                   key={report.id}
                   onClick={() => setSelectedReport(report.id)}
-                  className={`p-3 rounded-lg border-2 text-left transition-all ${selectedReport === report.id
+                  className={`p-3 rounded-lg border-2 text-left transition-all ${
+                    selectedReport === report.id
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{report.icon}</span>
@@ -451,7 +511,6 @@ const Reports = () => {
             </div>
           </div>
 
-          {/* Date Filters */}
           <div>
             <label className="label">From Date (Bill Date)</label>
             <input
@@ -472,7 +531,6 @@ const Reports = () => {
           </div>
         </div>
 
-        {/* Date info */}
         <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
           <p className="text-sm text-gray-500">
             {startDate || endDate ? (
@@ -486,10 +544,7 @@ const Reports = () => {
           </p>
           {(startDate || endDate) && (
             <button
-              onClick={() => {
-                setStartDate('');
-                setEndDate('');
-              }}
+              onClick={() => { setStartDate(''); setEndDate(''); }}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
               Clear dates
@@ -528,7 +583,6 @@ const Reports = () => {
           </button>
         </div>
 
-        {/* Preview Content */}
         {renderPreview()}
       </div>
 

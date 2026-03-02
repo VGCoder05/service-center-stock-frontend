@@ -83,7 +83,7 @@ class ClientExcelService {
     let totalQty = 0;
     let totalValue = 0;
     const categories = Object.entries(data.categories);
-    
+
     categories.forEach(([cat, info]) => {
       totalQty += info.count;
       totalValue += info.totalValue;
@@ -117,7 +117,7 @@ class ClientExcelService {
       this.addTitle(sheet, category.replace(/_/g, ' '), startDate && endDate ? `${startDate} to ${endDate}` : 'All Time');
 
       const headers = ['Serial Number', 'Part Name', 'Part Code', 'Voucher No.', 'Bill Date', 'Supplier', 'Unit Price'];
-      
+
       if (['SPU_PENDING', 'SPU_CLEARED'].includes(category)) {
         headers.push('SPU ID', 'Customer', 'Chargeable');
       } else if (category === 'AMC') {
@@ -225,7 +225,7 @@ class ClientExcelService {
     const sheet = workbook.addWorksheet(sheetName);
     this.addTitle(sheet, `${sheetName} Report`, startDate && endDate ? `${startDate} to ${endDate}` : 'All Time');
 
-    sheet.addRow(['SPU ID', 'Ticket ID', 'Customer', 'SPU Date', 'Serial No.', 'Part Name', 'Unit Price', 'Chargeable', 'Charge Amt', 'Payment']);
+    sheet.addRow(['SPU ID', 'Ticket ID', 'Customer', 'SPU Date', 'Voucher No.', 'Company Bill No.', 'Bill Date', 'Serial No.', 'Part Name', 'Unit Price', 'Chargeable', 'Charge Amt', 'Payment', 'Note']);
     this.styleHeaderRow(sheet.getRow(4));
 
     let grandTotal = 0;
@@ -235,37 +235,63 @@ class ClientExcelService {
       let spuTotal = 0;
       let spuChargeable = 0;
 
+      // Data rows — add notes at the end
       spu.serials.forEach((serial, idx) => {
         const row = sheet.addRow([
           idx === 0 ? spu.spuId : '',
           idx === 0 ? spu.ticketId || '-' : '',
           idx === 0 ? spu.customerName || '-' : '',
           idx === 0 ? (spu.spuDate ? new Date(spu.spuDate).toLocaleDateString('en-IN') : '-') : '',
-          serial.serialNumber, serial.partName, serial.unitPrice,
+          serial.voucherNumber || '-',
+          serial.companyBillNumber || '-',
+          serial.billDate ? new Date(serial.billDate).toLocaleDateString('en-IN') : '-',
+          serial.serialNumber,
+          serial.partName,
+          serial.unitPrice,
           serial.context?.isChargeable ? 'Yes' : 'No',
           serial.context?.isChargeable ? (serial.context?.chargeAmount || 0) : '-',
-          serial.context?.isChargeable ? (serial.context?.paymentStatus || '-') : '-'
+          serial.context?.isChargeable ? (serial.context?.paymentStatus || '-') : '-',
+          serial.context?.remarks || '-'        // ← Note column
         ]);
         this.styleDataRow(row, status || 'SPU_PENDING');
         spuTotal += serial.unitPrice || 0;
         if (serial.context?.isChargeable) spuChargeable += serial.context?.chargeAmount || 0;
       });
 
-      const subtotalRow = sheet.addRow(['', '', '', '', '', 'SPU Subtotal:', spuTotal, '', spuChargeable, '']);
+      // Subtotal — 14 columns now
+      const subtotalRow = sheet.addRow([
+        '', '', '', '', '', '', '', '', 'SPU Subtotal:', spuTotal, '', spuChargeable, '', ''
+      ]);
       subtotalRow.font = { bold: true };
       grandTotal += spuTotal;
       chargeableTotal += spuChargeable;
       sheet.addRow([]);
     });
 
-    const grandTotalRow = sheet.addRow(['', '', '', '', '', 'GRAND TOTAL:', grandTotal, '', chargeableTotal, '']);
+    //  Grand total column indices shifted
+    const grandTotalRow = sheet.addRow([
+      '', '', '', '', '', '', '', '', 'GRAND TOTAL:', grandTotal, '', chargeableTotal, '', ''
+    ]);
     grandTotalRow.font = { bold: true, size: 12 };
-    grandTotalRow.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEE2E2' } };
+    grandTotalRow.getCell(10).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEE2E2' } };
 
-    sheet.getColumn(1).width = 18; sheet.getColumn(2).width = 15; sheet.getColumn(3).width = 20;
-    sheet.getColumn(4).width = 12; sheet.getColumn(5).width = 18; sheet.getColumn(6).width = 22;
-    sheet.getColumn(7).width = 12; sheet.getColumn(7).numFmt = currencyFormat; sheet.getColumn(8).width = 12;
-    sheet.getColumn(9).width = 12; sheet.getColumn(9).numFmt = currencyFormat; sheet.getColumn(10).width = 12;
+    // Column widths — add column 14
+    sheet.getColumn(1).width = 18;   // SPU ID
+    sheet.getColumn(2).width = 15;   // Ticket ID
+    sheet.getColumn(3).width = 20;   // Customer
+    sheet.getColumn(4).width = 12;   // SPU Date
+    sheet.getColumn(5).width = 15;   // Voucher No.
+    sheet.getColumn(6).width = 18;   // Company Bill No.
+    sheet.getColumn(7).width = 12;   // Bill Date
+    sheet.getColumn(8).width = 18;   // Serial No.
+    sheet.getColumn(9).width = 22;   // Part Name
+    sheet.getColumn(10).width = 12;  // Unit Price
+    sheet.getColumn(10).numFmt = currencyFormat;
+    sheet.getColumn(11).width = 12;  // Chargeable
+    sheet.getColumn(12).width = 12;  // Charge Amt
+    sheet.getColumn(12).numFmt = currencyFormat;
+    sheet.getColumn(13).width = 12;  // Payment
+    sheet.getColumn(14).width = 30;  // Note          
 
     // RETURN A BUFFER
     return await workbook.xlsx.writeBuffer();

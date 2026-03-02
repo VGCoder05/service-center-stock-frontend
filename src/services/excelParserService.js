@@ -109,9 +109,9 @@ export const parseExcelFile = (file) => {
             let serialRef = cleanText(itemDetails);
             
             // Clean up serial string if it looks like "1/1962" (get the "1962" part)
-            if (serialRef.includes('/')) {
-                serialRef = serialRef.split('/')[1]; 
-            }
+            // if (serialRef.includes('/')) {
+            //     serialRef = serialRef.split('/')[1]; 
+            // }
 
             currentPart.serialNumbers.push({
               serialNumber: serialRef || `${currentPart.partCode}-${currentPart.serialNumbers.length + 1}`,

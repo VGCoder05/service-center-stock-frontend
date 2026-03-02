@@ -48,6 +48,7 @@ const ExcelImport = () => {
 
       setBills(parsedBills);
       setStep(STEPS.PREVIEW);
+      // console.log(bills)
       toast.success(`Parsed ${parsedBills.length} bill(s) from Excel`);
     } catch (err) {
       toast.error(err.message || 'Failed to parse Excel file');
@@ -221,7 +222,7 @@ const ExcelImport = () => {
                     Remove Bill
                   </button>
                 </div>
-
+                {console.log(bill)}
                 {expandedBills.has(billIndex) && (
                   <div className="p-4 bg-white overflow-x-auto">
                     <table className="w-full text-sm text-left">

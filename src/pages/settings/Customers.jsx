@@ -15,8 +15,8 @@ const schema = yup.object({
     .string()
     .max(20, 'Code cannot exceed 20 characters'),
   ticketNumber: yup
-    .number()
-    .max(20, 'Ticket number cannot exceed 20 characters'),
+    .string()
+    .max(15, 'Ticket number cannot exceed 20 characters'),
   customerName: yup
     .string()
     .max(150, 'Name cannot exceed 150 characters')
@@ -25,7 +25,7 @@ const schema = yup.object({
     .string()
     .max(100, 'Contact person cannot exceed 100 characters'),
   phone: yup
-    .number()
+    .string()
     .max(20, 'Phone cannot exceed 20 characters'),
   email: yup
     .string()

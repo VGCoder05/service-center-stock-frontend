@@ -3,10 +3,17 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import categoryService from '../../services/categoryService';
-import CategorizeModal from '../../components/serials/CategorizeModal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import showToast from '../../utils/toast';
 import { CATEGORY_CONFIG, CATEGORIES } from '../../utils/constants';
+
+import useBulkSelection from '../../hooks/useBulkSelection';
+import BulkActionBar from '../../components/common/BulkActionBar';
+import CategorizeModal from '../../components/serials/CategorizeModal';
+
+BulkActionBar
+CategorizeModal
+
 
 const CategoryView = () => {
   const { category } = useParams();
@@ -29,8 +36,22 @@ const CategoryView = () => {
   }
 
   // State
+  // for bulk category change
   const [serials, setSerials] = useState([]);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  // Bulk selection
+  const {
+    selectedIds,
+    selectedCount,
+    toggleOne,
+    toggleAll,
+    clearSelection,
+    isSelected,
+    isAllSelected,
+    isPartiallySelected
+  } = useBulkSelection(serials);
   const [loading, setLoading] = useState(true);
+
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -44,7 +65,6 @@ const CategoryView = () => {
   });
 
   // Modal states
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [bulkCategory, setBulkCategory] = useState('');
   const [isBulkConfirmOpen, setIsBulkConfirmOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,10 +82,12 @@ const CategoryView = () => {
       if (endDate) params.endDate = endDate;
 
       const response = await categoryService.getByCategory(category, params);
+      // console.log(response.data)
       setSerials(response.data);
       setPagination(response.pagination);
       setSummary(response.summary);
     } catch (err) {
+      console.log(err)
       showToast.error('Failed to fetch serial numbers');
     } finally {
       setLoading(false);
@@ -141,6 +163,28 @@ const CategoryView = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  // Determine how many context columns this category needs
+  const getContextColumnCount = () => {
+    switch (category) {
+      case 'SPU_PENDING':
+      case 'SPU_CLEARED':
+        case 'AMC':
+        return 2;
+      case 'OG':
+      case 'RETURN':
+      case 'RECEIVED_FOR_OTHERS':
+        return 1;
+      case 'IN_STOCK':
+      default:
+        return 0;
+    }
+  };
+
+  const contextColCount = getContextColumnCount();
+
+  // Total columns = checkbox(if !isViewer) + serial + part + bill + date + price + contextCols + actions
+  const totalColCount = (isViewer ? 0 : 1) + 6 + contextColCount;
+
   // Get context display
   const getContextDisplay = (serial) => {
     const ctx = serial.context;
@@ -150,44 +194,62 @@ const CategoryView = () => {
       case 'SPU_PENDING':
       case 'SPU_CLEARED':
         return (
-          <div className="text-xs">
-            <p className="font-medium">{ctx.spuId}</p>
-            <p className="text-gray-500">{ctx.customerName}</p>
-          </div>
+          <>
+            <td className="px-4 py-3">
+
+              <p className="text-xs font-medium">{ctx.spuId}</p>
+              <p className="text-xs text-gray-500">{ctx.customerName}</p>
+            </td>
+            <td className="text-xs px-4 py-3">
+              <p className="text-gray-500">{ctx.productModel}</p>
+            </td>
+          </>
         );
       case 'AMC':
         return (
-          <div className="text-xs">
-            <p className="font-medium">{ctx.customerName}</p>
-            <p className="text-gray-500">{ctx.amcNumber || '-'}</p>
-          </div>
+          <td className="px-4 py-3">
+
+            <div className="text-xs">
+              <p className="font-medium">{ctx.customerName}</p>
+              <p className="text-gray-500">{ctx.amcNumber || '-'}</p>
+            </div>
+          </td>
         );
       case 'OG':
         return (
-          <div className="text-xs">
-            <p className="font-medium">{ctx.customerName}</p>
-            <p className="text-orange-600">{formatCurrency(ctx.cashAmount)}</p>
-          </div>
+          <td className="px-4 py-3">
+
+            <div className="text-xs">
+              <p className="font-medium">{ctx.customerName}</p>
+              <p className="text-orange-600">{formatCurrency(ctx.cashAmount)}</p>
+            </div>
+          </td>
         );
       case 'RETURN':
         return (
-          <div className="text-xs">
-            <p className="text-gray-600 truncate max-w-xs">{ctx.returnReason}</p>
-          </div>
+          <td className="px-4 py-3">
+
+            <div className="text-xs">
+              <p className="text-gray-600 truncate max-w-xs">{ctx.returnReason}</p>
+            </div>
+          </td>
         );
       case 'RECEIVED_FOR_OTHERS':
         return (
-          <div className="text-xs">
-            <p className="font-medium">{ctx.receivedFor}</p>
-            <span className={`badge ${ctx.transferStatus === 'TRANSFERRED' ? 'badge-spu-cleared' : 'badge-spu-pending'}`}>
-              {ctx.transferStatus || 'PENDING'}
-            </span>
-          </div>
+          <td className="px-4 py-3">
+
+            <div className="text-xs">
+              <p className="font-medium">{ctx.receivedFor}</p>
+              <span className={`badge ${ctx.transferStatus === 'TRANSFERRED' ? 'badge-spu-cleared' : 'badge-spu-pending'}`}>
+                {ctx.transferStatus || 'PENDING'}
+              </span>
+            </div>
+          </td>
         );
       case 'IN_STOCK':
-        return ctx.location || '-';
+        return null;
       default:
-        return '-';
+        return null;
     }
   };
 
@@ -323,8 +385,11 @@ const CategoryView = () => {
                     <input
                       type="checkbox"
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                      checked={selectedSerials.length === serials.length && serials.length > 0}
-                      onChange={handleSelectAll}
+                      // checked={selectedSerials.length === serials.length && serials.length > 0}
+                      // onChange={handleSelectAll}
+                      checked={isAllSelected}
+                      ref={el => { if (el) el.indeterminate = isPartiallySelected; }}
+                      onChange={toggleAll}
                     />
                   </th>
                 )}
@@ -333,20 +398,25 @@ const CategoryView = () => {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Bill</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Bill Date</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Price</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Details</th>
+                {contextColCount >= 1 && (
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Details</th>
+                )}
+                {contextColCount >= 2 && (
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Sub Details</th>
+                )}
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={isViewer ? 7 : 8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={totalColCount} className="px-4 py-8 text-center text-gray-500">
                     Loading...
                   </td>
                 </tr>
               ) : serials.length === 0 ? (
                 <tr>
-                  <td colSpan={isViewer ? 7 : 8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={totalColCount} className="px-4 py-8 text-center text-gray-500">
                     No serial numbers in {config.label}
                   </td>
                 </tr>
@@ -358,8 +428,10 @@ const CategoryView = () => {
                         <input
                           type="checkbox"
                           className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                          checked={selectedSerials.includes(serial._id)}
-                          onChange={() => handleSelect(serial._id)}
+                          // checked={selectedSerials.includes(serial._id)}
+                          // onChange={() => handleSelect(serial._id)}
+                          checked={isSelected(serial._id)}
+                          onChange={() => toggleOne(serial._id)}
                         />
                       </td>
                     )}
@@ -391,9 +463,7 @@ const CategoryView = () => {
                     <td className="px-4 py-3 text-sm text-right font-medium">
                       {formatCurrency(serial.unitPrice)}
                     </td>
-                    <td className="px-4 py-3">
-                      {getContextDisplay(serial)}
-                    </td>
+                    {getContextDisplay(serial)}
                     <td className="px-4 py-3 text-right">
                       <Link
                         to={`/serials/${serial._id}`}
@@ -482,6 +552,19 @@ const CategoryView = () => {
         confirmText="Yes, Move All"
         isLoading={isProcessing}
         variant="primary"
+      />
+
+      <BulkActionBar
+        selectedCount={selectedCount}
+        onCategorize={() => setIsBulkModalOpen(true)}
+        onClear={clearSelection}
+      />
+      <CategorizeModal
+        isOpen={isBulkModalOpen}
+        onClose={() => { setIsBulkModalOpen(false); clearSelection(); }}
+        serial={null}
+        selectedSerials={selectedIds}
+        onSuccess={() => { fetchData(); clearSelection(); }}
       />
     </div>
   );

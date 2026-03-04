@@ -35,6 +35,13 @@ const categoryService = {
   updatePayment: async (serialId, data) => {
     const response = await api.put(`/categories/payment/${serialId}`, data);
     return response.data;
+  },
+
+  // Add this inside your exported service object
+  bulkCategorize: async (data) => {
+    // data should contain { serialIds: [...], category, context, reason }
+    const response = await api.put('/categories/bulk-categorize', data);
+    return response.data;
   }
 };
 

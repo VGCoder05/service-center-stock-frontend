@@ -296,7 +296,7 @@ const CategorizeModal = ({ isOpen, onClose, serial = null, selectedSerials = [],
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Product Model</label>
-                  <input type="text" className="input" placeholder="e.g., Model XYZ" {...register('productModel')} />
+                  <input type="text" className="input" placeholder="e.g., Model XYZ" {...register('productModel')} onInput={this.value = this.value.toUpperCase()}/>
                 </div>
                 <div>
                   <label className="label">Product Serial Number</label>

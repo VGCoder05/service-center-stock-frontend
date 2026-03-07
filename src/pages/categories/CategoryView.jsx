@@ -11,10 +11,6 @@ import useBulkSelection from '../../hooks/useBulkSelection';
 import BulkActionBar from '../../components/common/BulkActionBar';
 import CategorizeModal from '../../components/serials/CategorizeModal';
 
-BulkActionBar
-CategorizeModal
-
-
 const CategoryView = () => {
   const { category } = useParams();
   const navigate = useNavigate();
@@ -82,7 +78,6 @@ const CategoryView = () => {
       if (endDate) params.endDate = endDate;
 
       const response = await categoryService.getByCategory(category, params);
-      // console.log(response.data)
       setSerials(response.data);
       setPagination(response.pagination);
       setSummary(response.summary);

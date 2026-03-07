@@ -268,8 +268,8 @@ const CategorizeModal = ({ isOpen, onClose, serial = null, selectedSerials = [],
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">SPU ID *</label>
-                  <input type="text" className="input" placeholder="e.g., SPU/2026/001" {...register('spuId', { required: 'SPU ID is required' })} />
+                  <label className="label">SPU ID {`${selectedCategory === 'SPU_CLEARED' ? '*' : ""}`}</label>
+                  <input type="text" className="input" placeholder="e.g., SPU/2026/001" {...register('spuId', { required: selectedCategory === 'SPU_CLEARED' ? 'SPU ID is required' : false})} />
                   {errors.spuId && <p className="error-message">{errors.spuId.message}</p>}
                 </div>
                 <div>
@@ -288,8 +288,8 @@ const CategorizeModal = ({ isOpen, onClose, serial = null, selectedSerials = [],
                   {errors.customerName && <p className="error-message">{errors.customerName.message}</p>}
                 </div>
                 <div>
-                  <label className="label">SPU Date *</label>
-                  <input type="date" className="input" {...register('spuDate', { required: 'SPU Date is required' })} />
+                  <label className="label">SPU Date {`${selectedCategory === 'SPU_CLEARED' ? '*' : ""}`}</label>
+                  <input type="date" className="input" {...register('spuDate', { required: selectedCategory === 'SPU_CLEARED' ? 'SPU Date is required' : false })} />
                   {errors.spuDate && <p className="error-message">{errors.spuDate.message}</p>}
                 </div>
               </div>

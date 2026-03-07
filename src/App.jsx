@@ -16,6 +16,7 @@ import CategoryView from './pages/categories/CategoryView';
 import Dashboard from './pages/dashboard/Dashboard';
 import Reports from './pages/reports/Reports';
 import ExcelImport from './pages/import/ExcelImport';
+import ModelTracker from './pages/reports/ModelTracker';
 
 
 // Protected Route wrapper
@@ -175,6 +176,17 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <Reports />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports/models"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <ModelTracker />
               </AppLayout>
             </ProtectedRoute>
           }

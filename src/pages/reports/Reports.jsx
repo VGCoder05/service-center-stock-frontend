@@ -1,11 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import { format } from 'date-fns';
 import reportService, { downloadBlob } from '../../services/reportService';
 import showToast from '../../utils/toast';
 import { CATEGORY_CONFIG } from '../../utils/constants';
 import ClientExcelService from '../../services/clientExcelService';
 
-const REPORT_TYPES = [
+
+
+const Reports = () => {
+  const [selectedReport, setSelectedReport] = useState('valuation');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+
+  const navigate = useNavigate();
+
+  const REPORT_TYPES = [
   {
     id: 'valuation',
     name: 'Stock Valuation',
@@ -29,18 +42,19 @@ const REPORT_TYPES = [
     name: 'SPU Cleared',
     description: 'Cleared SPU items grouped by SPU ID',
     icon: '🟢'
+  },
+  {
+    id: 'model-wise-parts',
+    name: 'Model wise Parts',
+    description: 'View parts Models wise',
+    icon: '⚒',
+    // onclick: onClickViewReport(this.link),
+    // link: '/reports/models',
+    action: () => navigate('/reports/models') 
   }
 ];
 
-const Reports = () => {
-  const [selectedReport, setSelectedReport] = useState('valuation');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [previewData, setPreviewData] = useState(null);
-
-  const fetchPreview = async () => {
+const fetchPreview = async () => {
     setLoading(true);
     setPreviewData(null);
 
@@ -492,12 +506,13 @@ const Reports = () => {
               {REPORT_TYPES.map((report) => (
                 <button
                   key={report.id}
-                  onClick={() => setSelectedReport(report.id)}
-                  className={`p-3 rounded-lg border-2 text-left transition-all ${
-                    selectedReport === report.id
+                  onClick={() => {
+                     report.action ? report.action() : setSelectedReport(report.id)
+                  }}
+                  className={`p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${selectedReport === report.id
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{report.icon}</span>

@@ -9,7 +9,7 @@ import { CATEGORIES, CATEGORY_CONFIG, PAYMENT_STATUS, PAYMENT_MODES } from '../.
 const CategorizeModal = ({ isOpen, onClose, serial = null, selectedSerials = [], onSuccess }) => {
   // ✅ FIX 1: Properly determine bulk mode
   const isBulk = selectedSerials && selectedSerials.length > 0;
-  
+
   const [selectedCategory, setSelectedCategory] = useState('UNCATEGORIZED');
   const [customers, setCustomers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -243,11 +243,10 @@ const CategorizeModal = ({ isOpen, onClose, serial = null, selectedSerials = [],
                 key={key}
                 type="button"
                 onClick={() => handleCategoryChange(key)}
-                className={`p-2 text-xs font-medium rounded-lg border-2 transition-all ${
-                  selectedCategory === key
+                className={`p-2 text-xs font-medium rounded-lg border-2 transition-all ${selectedCategory === key
                     ? `${config.bgColor} ${config.borderColor} ${config.textColor}`
                     : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 {config.label}
               </button>
@@ -269,7 +268,7 @@ const CategorizeModal = ({ isOpen, onClose, serial = null, selectedSerials = [],
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">SPU ID {`${selectedCategory === 'SPU_CLEARED' ? '*' : ""}`}</label>
-                  <input type="text" className="input" placeholder="e.g., SPU/2026/001" {...register('spuId', { required: selectedCategory === 'SPU_CLEARED' ? 'SPU ID is required' : false})} />
+                  <input type="text" className="input" placeholder="e.g., SPU/2026/001" {...register('spuId', { required: selectedCategory === 'SPU_CLEARED' ? 'SPU ID is required' : false })} />
                   {errors.spuId && <p className="error-message">{errors.spuId.message}</p>}
                 </div>
                 <div>
@@ -296,7 +295,11 @@ const CategorizeModal = ({ isOpen, onClose, serial = null, selectedSerials = [],
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Product Model</label>
-                  <input type="text" className="input" placeholder="e.g., Model XYZ" {...register('productModel')} onInput={this.value = this.value.toUpperCase()}/>
+                  <input type="text" className="input" placeholder="e.g., Model XYZ" {...register('productModel', {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.toUpperCase();
+                    }
+                  })} />
                 </div>
                 <div>
                   <label className="label">Product Serial Number</label>

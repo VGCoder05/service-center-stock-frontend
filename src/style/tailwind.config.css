@@ -45,7 +45,7 @@
 
 @layer base {
     body {
-        @apply bg-gray-50 text-gray-900 antialiased;
+        @apply bg-[#e0e0e0] text-gray-900 antialiased;
     }
 }
 
@@ -100,7 +100,7 @@
 
     /* Cards */
     .card {
-        @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+        @apply bg-[#f0f0f0]/80 rounded-lg shadow-sm border border-gray-200 p-6;
     }
 
     /* Category badges */

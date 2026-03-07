@@ -46,7 +46,7 @@ const AppLayout = ({ children }) => {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Top Navigation */}
       <Navbar user={user} logout={logout} />
 

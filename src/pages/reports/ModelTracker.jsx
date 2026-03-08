@@ -75,17 +75,19 @@ const ModelTracker = () => {
   }, [currentModelSerials]);
 
   return (
-    <div className="p-6 h-[calc(100vh-4rem)] flex flex-col">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Model-Wise Parts Tracker</h1>
-        <p className="text-gray-600">Track which parts are being used in specific product models</p>
+    <div className="p-4 md:p-6 h-[calc(100vh-4rem)] flex flex-col">
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Model-Wise Parts Tracker</h1>
+        <p className="text-sm md:text-base text-gray-600">Track which parts are being used in specific product models</p>
       </div>
 
-      <div className="flex gap-6 flex-1 min-h-0">
+      {/* Changed to flex-col for mobile, flex-row for medium screens and up */}
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 flex-1 min-h-0">
         
         {/* LEFT SIDEBAR: List of Models */}
-        <div className="w-1/3 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-gray-200 bg-gray-50">
+        {/* Added fixed height for mobile so it doesn't take up the whole screen, full height on md */}
+        <div className="w-full md:w-1/3 h-64 md:h-auto bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0">
+          <div className="p-3 md:p-4 border-b border-gray-200 bg-gray-50">
             <input
               type="text"
               placeholder="Search models..."
@@ -105,13 +107,13 @@ const ModelTracker = () => {
                 <button
                   key={model}
                   onClick={() => setSelectedModel(model)}
-                  className={`w-full text-left px-4 py-3 rounded-lg mb-1 transition-colors cursor-pointer ${
+                  className={`w-full text-left px-3 py-2 md:px-4 md:py-3 rounded-lg mb-1 transition-colors cursor-pointer ${
                     selectedModel === model 
                       ? 'bg-blue-50 border-blue-200 border text-blue-700 font-medium' 
                       : 'hover:bg-gray-50 text-gray-700 border border-transparent'
                   }`}
                 >
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center text-sm md:text-base">
                     <span className="truncate pr-2">{model}</span>
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       selectedModel === model ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
@@ -126,13 +128,13 @@ const ModelTracker = () => {
         </div>
 
         {/* RIGHT PANEL: Grouped Parts Accordion */}
-        <div className="w-2/3 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
+        <div className="w-full md:w-2/3 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden flex-1">
+          <div className="p-3 md:p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <h2 className="text-base md:text-lg font-semibold text-gray-800">
               {selectedModel ? selectedModel : 'Select a model'}
             </h2>
             {selectedModel && (
-              <span className="text-sm text-gray-500">
+              <span className="text-xs md:text-sm text-gray-500">
                 Total Parts: {currentModelSerials.length} | Unique: {Object.keys(groupedParts).length}
               </span>
             )}
@@ -140,31 +142,29 @@ const ModelTracker = () => {
 
           <div className="flex-1 overflow-auto">
             {!selectedModel ? (
-              <div className="h-full flex items-center justify-center text-gray-400">
-                Select a model from the left to view its parts
+              <div className="h-full flex items-center justify-center text-gray-400 p-4 text-center">
+                Select a model from the list to view its parts
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
-                {/* ✅ NEW: Map through unique parts to create accordion items */}
                 {Object.entries(groupedParts).sort().map(([partName, serials]) => {
                   const isExpanded = expandedPart === partName;
-                  const firstSerial = serials[0]; // Used to grab the partCode quickly
+                  const firstSerial = serials[0];
 
                   return (
                     <div key={partName} className="bg-white">
-                      {/* Accordion Header */}
                       <button
                         onClick={() => setExpandedPart(isExpanded ? null : partName)}
-                        className={`w-full px-6 py-4 flex items-center justify-between transition-colors cursor-pointer ${
+                        className={`w-full px-4 py-3 md:px-6 md:py-4 flex items-center justify-between transition-colors cursor-pointer ${
                           isExpanded ? 'bg-blue-50/50' : 'hover:bg-gray-50'
                         }`}
                       >
-                        <div className="flex flex-col items-start text-left">
-                          <span className="font-semibold text-gray-900 line-clamp-1">{partName}</span>
+                        <div className="flex flex-col items-start text-left flex-1 min-w-0 pr-4">
+                          <span className="font-semibold text-gray-900 line-clamp-2 md:line-clamp-1 text-sm md:text-base">{partName}</span>
                           <span className="text-xs text-gray-500 font-mono mt-1">Code: {firstSerial?.partCode || 'N/A'}</span>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
                             Qty: {serials.length}
                           </span>
                           <svg 
@@ -176,46 +176,46 @@ const ModelTracker = () => {
                         </div>
                       </button>
 
-                      {/* Accordion Body (The Data Table) */}
                       {isExpanded && (
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                          <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-                            <table className="w-full text-sm text-left">
+                        <div className="bg-gray-50 px-3 py-3 md:px-6 md:py-4 border-t border-gray-100">
+                          {/* Added overflow-x-auto and whitespace-nowrap here for mobile tables */}
+                          <div className="border border-gray-200 rounded-lg overflow-x-auto bg-white">
+                            <table className="w-full text-sm text-left whitespace-nowrap">
                               <thead className="text-xs text-gray-600 uppercase bg-gray-50 border-b border-gray-200">
                                 <tr>
-                                  <th className="px-4 py-3">SPU Info</th>
-                                  <th className="px-4 py-3">Serial No</th>
-                                  <th className="px-4 py-3">Bill Info</th>
-                                  <th className="px-4 py-3">Status</th>
+                                  <th className="px-3 py-2 md:px-4 md:py-3">SPU Info</th>
+                                  <th className="px-3 py-2 md:px-4 md:py-3">Serial No</th>
+                                  <th className="px-3 py-2 md:px-4 md:py-3">Bill Info</th>
+                                  <th className="px-3 py-2 md:px-4 md:py-3">Status</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-200">
                                 {serials.map(part => (
                                   <tr key={part._id} className="hover:bg-gray-50">
-                                    <td className="px-4 py-3">
+                                    <td className="px-3 py-2 md:px-4 md:py-3">
                                       <div className="font-medium text-gray-900">{part.context?.spuId || 'N/A'}</div>
-                                      <div className="text-xs text-gray-500">{part.context?.customerName}</div>
+                                      <div className="text-xs text-gray-500 truncate max-w-[120px] md:max-w-none">{part.context?.customerName}</div>
                                       {part.context?.ticketId && (
                                         <div className="text-xs text-blue-500">Tkt: {part.context?.ticketId}</div>
                                       )}
                                     </td>
 
-                                    <td className="px-4 py-3">
+                                    <td className="px-3 py-2 md:px-4 md:py-3">
                                       <div className="font-medium text-blue-600 font-mono">
                                         {part.serialNumber}
                                       </div>
                                       <div className="text-xs text-gray-500 mt-0.5">₹{part.unitPrice}</div>
                                     </td>
 
-                                    <td className="px-4 py-3">
+                                    <td className="px-3 py-2 md:px-4 md:py-3">
                                       <div className="font-medium text-gray-900">V.No: {part.voucherNumber}</div>
                                       <div className="text-xs text-gray-500">
                                         {part.billDate ? format(new Date(part.billDate), 'dd MMM yyyy') : '-'}
                                       </div>
                                     </td>
 
-                                    <td className="px-4 py-3">
-                                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                    <td className="px-3 py-2 md:px-4 md:py-3">
+                                       <span className={`px-2 py-1 text-[10px] md:text-xs rounded-full font-medium ${
                                           part.currentCategory === 'SPU_CLEARED' 
                                             ? 'bg-green-100 text-green-800' 
                                             : 'bg-yellow-100 text-yellow-800'
@@ -242,7 +242,6 @@ const ModelTracker = () => {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

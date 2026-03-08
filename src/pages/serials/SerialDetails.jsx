@@ -7,11 +7,14 @@ import categoryService from '../../services/categoryService';
 import CategorizeModal from '../../components/serials/CategorizeModal';
 import showToast from '../../utils/toast';
 import { CATEGORY_CONFIG, PAYMENT_STATUS } from '../../utils/constants';
+import EditSerialModal from '../../components/serials/EditSerialModal';
+
 
 const SerialDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isViewer } = useAuth();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // State
   const [serial, setSerial] = useState(null);
@@ -108,8 +111,8 @@ const SerialDetails = () => {
       <div className="flex justify-between items-start mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Link 
-              to={`/bills/${serial.billId?._id || serial.billId}`} 
+            <Link
+              to={`/bills/${serial.billId?._id || serial.billId}`}
               className="text-gray-500 hover:text-gray-700"
             >
               ← {serial.voucherNumber}
@@ -124,12 +127,20 @@ const SerialDetails = () => {
           </div>
         </div>
         {!isViewer && (
-          <button
-            onClick={() => setIsCategorizeModalOpen(true)}
-            className="btn-primary"
-          >
-            Change Category
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium rounded-lg transition-colors"
+            >
+              Edit Details
+            </button>
+            <button
+              onClick={() => setIsCategorizeModalOpen(true)}
+              className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg transition-colors shadow-sm"
+            >
+              Change Category
+            </button>
+          </div>
         )}
       </div>
 
@@ -163,7 +174,7 @@ const SerialDetails = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Voucher Number</p>
-                  <Link 
+                  <Link
                     to={`/bills/${serial.billId?._id || serial.billId}`}
                     className="font-medium text-blue-600 hover:text-blue-800"
                   >
@@ -366,24 +377,24 @@ const SerialDetails = () => {
         <div className="lg:col-span-1">
           <div className="card">
             <h3 className="font-semibold text-gray-900 mb-4">Movement History</h3>
-            
+
             {history.length === 0 ? (
               <p className="text-gray-500 text-sm italic">No movement history yet.</p>
             ) : (
               <div className="space-y-4">
                 {history.map((movement, index) => (
-                  <div 
-                    key={movement._id} 
+                  <div
+                    key={movement._id}
                     className={`relative pl-4 ${index !== history.length - 1 ? 'pb-4 border-l-2 border-gray-200' : ''}`}
                   >
                     {/* Timeline dot */}
                     <div className="absolute -left-1.5 top-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
-                    
+
                     <div className="text-sm">
                       <div className="flex items-center gap-2 mb-1">
                         {getMovementBadge(movement.movementType)}
                       </div>
-                      
+
                       <div className="flex items-center gap-1 text-gray-600">
                         {movement.fromCategory && (
                           <>
@@ -438,6 +449,14 @@ const SerialDetails = () => {
       <CategorizeModal
         isOpen={isCategorizeModalOpen}
         onClose={() => setIsCategorizeModalOpen(false)}
+        serial={serial}
+        onSuccess={fetchData}
+      />
+      
+      {/* Edit Details Modal */}
+      <EditSerialModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
         serial={serial}
         onSuccess={fetchData}
       />
